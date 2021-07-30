@@ -2,10 +2,10 @@ require 'reader'
 require 'tempfile'
 
 describe Reader do
-  describe '.urls from file' do
+  describe '::from_file' do
     context 'when file does not exist' do
       it 'returns a message saying so' do
-        expect(Reader.urls_from_file('an unexisting path')).to eq ('File does not exist')
+        expect(Reader.from_file('an unexisting path')).to eq ('File does not exist')
       end
     end
 
@@ -13,7 +13,7 @@ describe Reader do
       before(:context) { @temp = create_tempfile('empty-file') }
 
       it 'processes the file and nothing else (URLs processed: 0' do
-        expect(Reader.urls_from_file(@temp.path)).to be 0
+        expect(Reader.from_file(@temp.path)).to be 0
       end
 
       after(:context) { close_file(@temp) }
@@ -22,12 +22,13 @@ describe Reader do
     context 'when the file has some content' do
       before(:context) do
         @temp = create_tempfile('some-content-file')
-        5.times { |i| @temp.write("https://some-url-#{i}/with-rss\n") }
+        5.times { |i| @temp.write(mockup_url(i)) }
         @temp.rewind
       end
 
       it 'processes the file and the URLs' do
-        expect(Reader.urls_from_file(@temp.path)).to be > 0
+        5.times { |i| stub_request(:get, mockup_url(i)) }
+        expect(Reader.from_file(@temp.path)).to be > 0
       end
 
       after(:context) { close_file(@temp) }
@@ -39,6 +40,10 @@ describe Reader do
 
     def create_tempfile(name)
       Tempfile.create([name, '.txt'], '/tmp/' )
+    end
+
+    def mockup_url(index)
+      "https://some-url-#{index}/with-rss\n"
     end
   end
 end

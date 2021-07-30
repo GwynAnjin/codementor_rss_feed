@@ -7,9 +7,7 @@ class Reader
     def from_file(path)
       return 'File does not exist' unless File.exist?(path)
       File.open(path, 'r') do |f|
-        pp f
         f.each do |line|
-          pp line 
           read_rss(line.chomp)
         end
       end
@@ -59,14 +57,19 @@ class Reader
   
     def parse_rss(rss)
       feed = RSS::Parser.parse(rss)
+      iterate_result(feed)
+    rescue RSS::InvalidRSSError => ex
+      pp 'RSS was Invalid'
+      pp ex
+    end
+
+    def iterate_result(feed)
+      return unless feed
       feed.items.each do |item|
         pp "-- Title: #{item.title} --"
         pp "-- Link: #{item.link} --"
         pp "-- Description: #{item.description} --"
       end
-    rescue RSS::InvalidRSSError => ex
-      pp 'RSS was Invalid'
-      pp ex
     end
   end
 end
