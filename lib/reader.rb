@@ -1,6 +1,5 @@
 require 'rss'
 require 'open-uri'
-require_relative 'parser'
 
 class Reader
   class << self
@@ -11,9 +10,7 @@ class Reader
           read_rss(line.chomp)
         end
       end
-      lines_read = %x{wc -l "#{path}"}.split.first.to_i
-      # pp "Number of URLs processed: #{lines_read}"
-      lines_read
+      count_processed_lines(path)
     end
   
     def from_console
@@ -22,9 +19,21 @@ class Reader
         read_rss(url)
         url = process_input
       end
+    rescue OpenURI::HTTPError 
+      'There was a problem opening the URL'
+    rescue Errno::ENOENT
+      'The url was treated as a directory'
+    rescue RSS::InvalidRSSError
+      'RSS was Invalid'
     end
 
     private
+
+    def count_processed_lines(path)
+      lines_read = %x{wc -l "#{path}"}.split.first.to_i
+      pp "Number of URLs processed: #{lines_read}"
+      lines_read
+    end
 
     def process_input
       pp '--------------------'
@@ -37,30 +46,18 @@ class Reader
     end
 
     def console_message
-      pp 'Introduce another RSS URL (or empty to exit)'
-    end
-
-    def use_own_parser(url)
-      URI.open(url) do |xml|
-        Parser.process_xml(xml)
-      end
+      pp 'Introduce a RSS URL (or empty to exit)'
     end
 
     def read_rss(url)
       URI.open(url) do |rss|
         parse_rss(rss)
       end
-    rescue URI::InvalidURIError => ex
-      pp 'There was a problem with the URL Provided'
-      pp ex
     end
   
     def parse_rss(rss)
       feed = RSS::Parser.parse(rss)
       iterate_result(feed)
-    rescue RSS::InvalidRSSError => ex
-      pp 'RSS was Invalid'
-      pp ex
     end
 
     def iterate_result(feed)

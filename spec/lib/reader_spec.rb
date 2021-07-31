@@ -1,5 +1,6 @@
 require 'reader'
 require 'tempfile'
+require 'stringio'
 
 describe Reader do
   describe '::from_file' do
@@ -41,9 +42,37 @@ describe Reader do
     def create_tempfile(name)
       Tempfile.create([name, '.txt'], '/tmp/' )
     end
+  end
 
-    def mockup_url(index)
-      "https://some-url-#{index}/with-rss\n"
+  describe '::from_console' do
+    context 'when the input is blank' do
+      it 'finishes the processing' do
+        allow(Reader).to receive(:handle_input).and_return('')
+        expect{ Reader.from_console }.not_to raise_error
+      end
+    end
+
+    context 'when the input is not a URL' do
+      it 'raises the exception' do
+        allow(Reader).to receive(:handle_input).and_return('NOT a URL')
+        expect(Reader.from_console).to eq('The url was treated as a directory')
+      end
+    end
+
+    context 'when the input is an invalid URL' do
+      it 'raises the exception' do
+        url = 'https://www.not-a-valid.to/'
+        stub_request(:get, url).and_raise(SocketError)
+        allow(Reader).to receive(:handle_input).and_return(url)
+        expect{Reader.from_console}.to raise_error(SocketError)
+      end
+    end
+
+    context 'when the input keeps coming' do
     end
   end
+end
+
+def mockup_url(index)
+  "https://some-url-#{index}/with-rss\n"
 end
