@@ -48,7 +48,7 @@ describe Reader do
     context 'when the input is blank' do
       it 'finishes the processing' do
         allow(Reader).to receive(:handle_input).and_return('')
-        expect{ Reader.from_console }.not_to raise_error
+        expect(Reader.from_console).to be_nil
       end
     end
 
@@ -64,7 +64,16 @@ describe Reader do
         url = 'https://www.not-a-valid.to/'
         stub_request(:get, url).and_raise(SocketError)
         allow(Reader).to receive(:handle_input).and_return(url)
-        expect{Reader.from_console}.to raise_error(SocketError)
+        expect(Reader.from_console).to eq('There was a problem opening the URL')
+      end
+    end
+
+    context 'when the URL is valid but the XML is not' do
+      it 'raises the RSS Parser Exception' do
+        url = 'https://www.ruby-lang.org/en/feeds/news.rss'
+        stub_request(:get, url).and_return('<xml><channel></item></xml>')
+        allow(Reader).to receive(:handle_input).and_return(url)
+        expect(Reader.from_console).to eq('RSS was Invalid')
       end
     end
 

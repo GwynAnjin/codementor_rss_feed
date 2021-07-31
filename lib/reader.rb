@@ -19,7 +19,7 @@ class Reader
         read_rss(url)
         url = process_input
       end
-    rescue OpenURI::HTTPError 
+    rescue SocketError 
       'There was a problem opening the URL'
     rescue Errno::ENOENT
       'The url was treated as a directory'
