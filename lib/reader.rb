@@ -3,16 +3,6 @@ require 'open-uri'
 
 class Reader
   class << self
-    def from_file(path)
-      return 'File does not exist' unless File.exist?(path)
-      File.open(path, 'r') do |f|
-        f.each do |line|
-          read_rss(line.chomp)
-        end
-      end
-      count_processed_lines(path)
-    end
-  
     def from_console
       url = process_input
       until url.empty? do
@@ -23,17 +13,11 @@ class Reader
       'There was a problem opening the URL'
     rescue Errno::ENOENT
       'The url was treated as a directory'
-    rescue RSS::InvalidRSSError
-      'RSS was Invalid'
+    rescue RSS::NotWellFormedError
+      'RSS was not well formed'
     end
 
     private
-
-    def count_processed_lines(path)
-      lines_read = %x{wc -l "#{path}"}.split.first.to_i
-      pp "Number of URLs processed: #{lines_read}"
-      lines_read
-    end
 
     def process_input
       pp '--------------------'
@@ -46,13 +30,11 @@ class Reader
     end
 
     def console_message
-      pp 'Introduce a RSS URL (or empty to exit)'
+      pp 'Introduce a RSS URL (or return to exit)'
     end
 
     def read_rss(url)
-      URI.open(url) do |rss|
-        parse_rss(rss)
-      end
+      URI.open(url) {|rss| parse_rss(rss)}
     end
   
     def parse_rss(rss)
